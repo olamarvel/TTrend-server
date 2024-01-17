@@ -1,80 +1,36 @@
 // Import the OpenAI library
-// const { Configuration, OpenAIApi } = require("openai");
 import OpenAI from 'openai';
-import http from "http"
-// // Set the OpenAI API key as an environment variable
-// const configuration = new Configuration({
-//   apiKey: "process.env.OPENAI_API_KEY",
-// });
 
-// Create an OpenAI API client
+// Import the express module
+import express from 'express';
+
+// Create an express app
+const app = express();
+
+// Set the OpenAI API key as an environment variable
 const openai = new OpenAI({apiKey:process.env.OPENAI_API_KEY});
-
-
-// Import the http module
-// const http = require("http");
 
 // Set the server port
 const SERVER_PORT = 8184;
 
-// Create a http server
-const server = http.createServer();
+// Use the express.json middleware to parse JSON requests
+app.use(express.json());
 
-// Listen to the server port
-server.listen(SERVER_PORT, () => {
-  console.log(`Server is running on port ${SERVER_PORT}. Hit Ctrl-C to end.`);
+// Handle GET requests to the root path
+app.get('/', (req, res) => {
+  res.send('Welcome to the express server.');
 });
 
-// Handle requests
-server.on("request", async (req, res) => {
-  switch (req.url) {
-    case "/api":
-      // Set the response header to JSON
-      res.setHeader("Content-Type", "application/json");
+// Handle POST requests to the /api path
+app.post('/api', async (req, res) => {
+  // Get the prompt from the request body
+  const { prompt } = req.body;
 
-      // Check if the request is valid JSON
-      if (
-        (req.headers["content-type"] || "").replace(/\s*;.*$/, "") !==
-        "application/json"
-      ) {
-        // Send an error response
-        res.writeHead(400);
-        res.end(JSON.stringify({ error: "invalid json" }));
-        break;
-      }
+  // Generate a response using the OpenAI API
+  const result = await generateResponse(prompt);
 
-      // Read the request body
-      const buffers = [];
-
-      for await (const chunk of req) {
-        buffers.push(chunk);
-      }
-
-      let json;
-      try {
-        // Parse the request body as JSON
-        json = JSON.parse(Buffer.concat(buffers).toString());
-      } catch {
-        // Send an error response
-        res.writeHead(400);
-        res.end(JSON.stringify({ error: "invalid json" }));
-        break;
-      }
-
-      // Generate a response using the OpenAI API
-      const result = await generateResponse(json.prompt);
-
-      // Send a success response
-      res.writeHead(200);
-      res.end(JSON.stringify({ response: result }));
-      break;
-    default:
-      // Send a not found response
-      res.setHeader("Content-Type", "text/html;charset=utf-8");
-      res.writeHead(404);
-      res.end("404 Not Found");
-      break;
-  }
+  // Send a success response with the result
+  res.json({ response: result });
 });
 
 // Define a function to generate a response using the OpenAI API
@@ -101,7 +57,13 @@ Posts:`;
     prompt,
     ...params,
   });
-console.log(response)
+  console.log(response);
+
   // Return the generated text
   return response?.choices[0]?.text || "empty ";
 };
+
+// Start the server and listen to the port
+app.listen(SERVER_PORT, () => {
+  console.log(`Server is running on port ${SERVER_PORT}. Hit Ctrl-C to end.`);
+});
