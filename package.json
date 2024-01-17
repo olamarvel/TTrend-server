@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "openai": "^4.24.1"
+    "openai": "^4.24.1",
+    "express": "^4.17.2"
   }
 }
